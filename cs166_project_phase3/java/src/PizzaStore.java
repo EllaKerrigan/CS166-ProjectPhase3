@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.ArrayList;
+import java.sql.PreparedStatement;
 import java.lang.Math;
 
 /**
@@ -353,69 +354,85 @@ public class PizzaStore {
    /*
     * Creates a new user
     **/
-   public static void CreateUser(PizzaStore esql){
-   try{
+   public static void CreateUser(PizzaStore esql) {
+    try {
+        // Prompt user for input
+        System.out.print("Enter username: ");
+        String username = in.readLine();
 
-    System.out.print("Enter your username: ");
-    String username = in.readLine();
+        System.out.print("Enter password: ");
+        String password = in.readLine();
 
-    System.out.print("Enter your password: ");
-    String password = in.readLine();
+        System.out.print("Enter role (e.g., Customer, Manager, Driver): ");
+        String role = in.readLine();
 
-    System.out.print("Enter your address: ");
-    String address = in.readLine();
+        System.out.print("Enter phone number: ");
+        String phoneNum = in.readLine();
 
-    System.out.print("Enter your phone-number: ");
-    String phoneNumber = in.readLine();
+        // Construct the SQL insert statement
+        String query = String.format(
+            "INSERT INTO Users (login, password, role, favoriteItems, phoneNum) VALUES ('%s', '%s', '%s', NULL, '%s');",
+            username, password, role, phoneNum
+        );
 
-    String query = String.format(
-         "INSERT INTO Users (username, password, phoneNumber , address, favoriteItem) " +
-         "VALUES ('%s', '%s', '%s', '%s', '%s', '')",
-         username, password, phoneNumber, address);
 
-      esql.executeUpdate(query);
-      System.out.println("User successfully registered!");
+        // Execute the query
+        esql.executeUpdate(query);
+        System.out.println("User successfully created!");
 
-    }catch (Exception e)
-    {
-        System.err.println("Error while creating user: " + e.getMessage());
-    } 
- 
-   }//end CreateUser
+    } catch (Exception e) {
+        System.err.println("Error creating user: " + e.getMessage());
+    }
+}
+
 
 
    /*
     * Check log in credentials for an existing user
     * @return User login or null is the user does not exist
     **/
-   public static String LogIn(PizzaStore esql){
-        try {
-           System.out.print("Enter your username: ");
-           String username = in.readLine();
-     
-           System.out.print("Enter your password: ");
-           String password = in.readLine();
-     
-           String query = String.format(
-              "SELECT * FROM Users WHERE username = '%s' AND password = '%s'",
-              username, password);
-     
-           int userCount = esql.executeQuery(query);
-     
-           if (userCount > 0) {
-              System.out.println("Login successful!");
-              return username;
-           } else {
-              System.out.println("Invalid username or password.");
-              return null;
-           }
-     
-        } catch (Exception e) {
-           System.err.println("Error while logging in: " + e.getMessage());
-           return null;
+
+public static String LogIn(PizzaStore esql) {
+    try {
+        // Prompt user for input
+        System.out.print("Enter your username: ");
+        String login = in.readLine();  // Assuming 'in' is a BufferedReader
+
+        System.out.print("Enter your password: ");
+        String password = in.readLine();
+
+        // Prepare SQL query (case-insensitive for username)
+        String query = "SELECT * FROM Users WHERE login = ? AND password = ?";
+
+        // Get database connection
+        Connection conn = esql._connection; // Assuming esql.getConnection() returns a valid Connection object
+
+        // Prepare statement to prevent SQL injection
+        PreparedStatement stmt = conn.prepareStatement(query);
+        stmt.setString(1, login); // Set the login parameter
+        stmt.setString(2, password); // Set the password parameter
+
+        // Execute query and get result
+        ResultSet rs = stmt.executeQuery();
+
+        // Check if the user exists
+        if (rs.next()) {
+            System.out.println("Login successful!");
+            return login; // Return the username (login) if successful
+        } else {
+            System.out.println("Invalid username or password.");
+            return null;
         }
-     
-   }//end
+
+    } catch (SQLException e) {
+        System.err.println("SQL error: " + e.getMessage());
+        return null;
+    } catch (Exception e) {
+        System.err.println("Error while logging in: " + e.getMessage());
+        return null;
+    }
+}
+ 
 
 // Rest of the functions definition go in here
 
