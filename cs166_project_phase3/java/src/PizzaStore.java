@@ -369,14 +369,11 @@ public class PizzaStore {
         System.out.print("Enter phone number: ");
         String phoneNum = in.readLine();
 
-        // Construct the SQL insert statement
         String query = String.format(
             "INSERT INTO Users (login, password, role, favoriteItems, phoneNum) VALUES ('%s', '%s', '%s', NULL, '%s');",
             username, password, role, phoneNum
         );
 
-
-        // Execute the query
         esql.executeUpdate(query);
         System.out.println("User successfully created!");
 
@@ -394,25 +391,20 @@ public class PizzaStore {
 
 public static String LogIn(PizzaStore esql) {
     try {
-        // Prompt user for input
         System.out.print("Enter your username: ");
-        String login = in.readLine();  // Assuming 'in' is a BufferedReader
+        String login = in.readLine();  
 
         System.out.print("Enter your password: ");
         String password = in.readLine();
 
-        // Prepare SQL query (case-insensitive for username)
         String query = "SELECT * FROM Users WHERE login = ? AND password = ?";
 
-        // Get database connection
         Connection conn = esql._connection; // Assuming esql.getConnection() returns a valid Connection object
 
-        // Prepare statement to prevent SQL injection
         PreparedStatement stmt = conn.prepareStatement(query);
         stmt.setString(1, login); // Set the login parameter
         stmt.setString(2, password); // Set the password parameter
 
-        // Execute query and get result
         ResultSet rs = stmt.executeQuery();
 
         // Check if the user exists
