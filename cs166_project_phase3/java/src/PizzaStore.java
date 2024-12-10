@@ -439,20 +439,70 @@ public static String LogIn(PizzaStore esql) {
    public static void viewProfile(PizzaStore esql) {}
    public static void updateProfile(PizzaStore esql) {}
    public static void viewMenu(PizzaStore esql) {
-    try {
-           String query = "SELECT * FROM Menu";
-           List<List<String>> menuItems = esql.executeQueryAndReturnResult(query);
-     
-           System.out.println("Menu:");
-           System.out.println("ID\tName\tPrice");
-           for (List<String> item : menuItems) {
-              System.out.println(item.get(0) + "\t" + item.get(1) + "\t" + item.get(2));
-           }
-     
-        } catch (Exception e) {
-           System.err.println("Error while retrieving menu: " + e.getMessage());
+	   try {
+        System.out.println("Enter a type (e.g., drinks, sides) to filter by type (or leave blank to skip): ");
+
+        String typeOfItem = in.readLine();
+
+        System.out.println("Enter a maximum price to filter by price (or leave blank to skip): ");
+        String priceStr = in.readLine();
+        Double price = null;
+        if (!priceStr.isEmpty()) {
+            price = Double.parseDouble(priceStr);
         }
-}
+        System.out.println("Sort by price: ");
+        System.out.println("1. Lowest to Highest");
+        System.out.println("2. Highest to Lowest");
+        System.out.print("Enter your choice (1 or 2): ");
+        String sortChoice = in.readLine();
+        String sortOrder = "";
+        if (sortChoice.equals("1")) {
+            sortOrder = "ASC"; // Sort from low to high
+        } else if (sortChoice.equals("2")) {
+            sortOrder = "DESC"; // Sort from high to low
+        }
+
+        String query = "SELECT * FROM items";
+        String conditions = "";
+
+        if (!typeOfItem.isEmpty()) {
+            conditions += " typeOfItem = '" + typeOfItem + "'";
+        }
+
+        if (price != null) {
+            if (!conditions.isEmpty()) {
+                conditions += " AND";
+            }
+            conditions += " price <= " + price;
+        }
+
+        if (!conditions.isEmpty()) {
+            query += " WHERE" + conditions;
+        }
+
+        if (!sortOrder.isEmpty()) {
+            query += " ORDER BY price " + sortOrder;
+        }
+
+        
+        Connection conn = esql._connection; 
+        PreparedStatement stmt = conn.prepareStatement(query);
+        ResultSet rs = stmt.executeQuery(); 
+ 
+        System.out.println("\nMenu Items:");
+        while (rs.next()) {
+            System.out.println("ID: " + rs.getInt("id"));
+            System.out.println("Name: " + rs.getString("name"));
+            System.out.println("Type: " + rs.getString("typeOfItem"));
+            System.out.println("Price: " + rs.getDouble("price"));
+            System.out.println("Description: " + rs.getString("description"));
+            System.out.println();
+        }
+
+    } catch (Exception e) {
+        System.err.println("Error while retrieving menu: " + e.getMessage());
+    }
+   }
    public static void placeOrder(PizzaStore esql) {}
    public static void viewAllOrders(PizzaStore esql) {}
    public static void viewRecentOrders(PizzaStore esql) {}
