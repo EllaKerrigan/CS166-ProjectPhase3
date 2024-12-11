@@ -666,7 +666,8 @@ public class PizzaStore {
          }
 
          query = String.format(
-               "SELECT fo.*, STRING_AGG(io.itemName, ', ') AS ordered_items FROM ItemsInOrder io, FoodOrder fo " +
+               "SELECT fo.*, STRING_AGG(CONCAT(io.itemName, ' (', io.quantity, ')'), ', ') " +
+                     "AS ordered_items FROM ItemsInOrder io, FoodOrder fo " +
                      "WHERE fo.orderID = io.orderID AND fo.orderID = '%s' GROUP BY fo.orderID",
                order_num, username);
          stmt = conn.prepareStatement(query);
