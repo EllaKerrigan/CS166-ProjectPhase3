@@ -665,16 +665,21 @@ public class PizzaStore {
             return;
          }
 
-         query = String.format("SELECT * FROM FoodOrder WHERE orderID = %s AND login = '%s'", order_num, username);
+         query = String.format(
+               "SELECT fo.*, STRING_AGG(io.itemName, ', ') AS ordered_items FROM ItemsInOrder io, FoodOrder fo " +
+                     "WHERE fo.orderID = io.orderID AND fo.orderID = '%s' GROUP BY fo.orderID",
+               order_num, username);
          stmt = conn.prepareStatement(query);
          rs = stmt.executeQuery();
 
+         System.out.println("\nOrder Info: ");
          while (rs.next()) {
             System.out.println("Order ID: " + rs.getInt("orderID"));
             System.out.println("Store ID: " + rs.getInt("storeID"));
             System.out.println("Total Price: " + rs.getDouble("totalPrice"));
             System.out.println("Timestamp: " + rs.getTimestamp("orderTimestamp"));
-            System.out.println("Order Status: " + rs.getString("orderStatus") + "\n");
+            System.out.println("Order Status: " + rs.getString("orderStatus"));
+            System.out.println("Items Ordered: " + rs.getString("ordered_items") + "\n");
          }
 
       } catch (SQLException e) {
