@@ -332,7 +332,7 @@ public class PizzaStore {
                         viewRecentOrders(esql);
                         break;
                      case 7:
-                        viewOrderInfo(esql);
+                        viewOrderInfo(esql, authorisedUser);
                         break;
                      case 8:
                         viewStores(esql);
@@ -505,6 +505,9 @@ public class PizzaStore {
    public static void updateProfile(PizzaStore esql, String username) {
       int user_choice = 0;
       Connection conn = esql._connection;
+      PreparedStatement stmt;
+      ResultSet rs;
+      String query;
 
       try {
          do {
@@ -523,18 +526,13 @@ public class PizzaStore {
             }
          } while (user_choice < 1 || user_choice > 4);
 
-      } catch (IOException e) {
-         System.err.println("Error with user input: " + e.getMessage());
-      }
-
-      try {
          if (user_choice == 1) {
             System.out.print("Input new favorite item: ");
             String inputStr = in.readLine();
 
-            String query = String.format("SELECT COUNT(*) FROM Items WHERE itemName = '%s'", inputStr);
-            PreparedStatement stmt = conn.prepareStatement(query);
-            ResultSet rs = stmt.executeQuery();
+            query = String.format("SELECT COUNT(*) FROM Items WHERE itemName = '%s'", inputStr);
+            stmt = conn.prepareStatement(query);
+            rs = stmt.executeQuery();
 
             if (rs.next() && !rs.getBoolean(1)) {
                System.out.println("Selected Item does not exist in the menu.\n");
@@ -550,8 +548,8 @@ public class PizzaStore {
             System.out.print("Input new phone number: ");
             String inputStr = in.readLine();
 
-            String query = String.format("UPDATE Users SET phoneNum = '%s' WHERE login = '%s'", inputStr, username);
-            PreparedStatement stmt = conn.prepareStatement(query);
+            query = String.format("UPDATE Users SET phoneNum = '%s' WHERE login = '%s'", inputStr, username);
+            stmt = conn.prepareStatement(query);
             stmt.executeUpdate();
             System.out.println("Phone number updated successfully!\n");
 
@@ -559,8 +557,8 @@ public class PizzaStore {
             System.out.print("Input new password: ");
             String inputStr = in.readLine();
 
-            String query = String.format("UPDATE Users SET password = '%s' WHERE login = '%s'", inputStr, username);
-            PreparedStatement stmt = conn.prepareStatement(query);
+            query = String.format("UPDATE Users SET password = '%s' WHERE login = '%s'", inputStr, username);
+            stmt = conn.prepareStatement(query);
             stmt.executeUpdate();
             System.out.println("Password updated successfully!\n");
 
@@ -647,7 +645,43 @@ public class PizzaStore {
    public static void viewRecentOrders(PizzaStore esql) {
    }
 
-   public static void viewOrderInfo(PizzaStore esql) {
+   public static void viewOrderInfo(PizzaStore esql, String username) {
+      Connection conn = esql._connection;
+      PreparedStatement stmt;
+      ResultSet rs;
+      String query;
+
+      try {
+         System.out.print("\nEnter the order number of the order you want to view: ");
+         String order_num = in.readLine();
+
+         query = String.format("SELECT COUNT(*) FROM FoodOrder WHERE orderID = %s AND login ='%s'", order_num,
+               username);
+         stmt = conn.prepareStatement(query);
+         rs = stmt.executeQuery();
+
+         if (rs.next() && !rs.getBoolean(1)) {
+            System.out.println("Selected order does not exists.\n");
+            return;
+         }
+
+         query = String.format("SELECT * FROM FoodOrder WHERE orderID = %s AND login = '%s'", order_num, username);
+         stmt = conn.prepareStatement(query);
+         rs = stmt.executeQuery();
+
+         while (rs.next()) {
+            System.out.println("Order ID: " + rs.getInt("orderID"));
+            System.out.println("Store ID: " + rs.getInt("storeID"));
+            System.out.println("Total Price: " + rs.getDouble("totalPrice"));
+            System.out.println("Timestamp: " + rs.getTimestamp("orderTimestamp"));
+            System.out.println("Order Status: " + rs.getString("orderStatus") + "\n");
+         }
+
+      } catch (SQLException e) {
+         System.err.println("Database error while retrieving order info: " + e.getMessage());
+      } catch (IOException e) {
+         System.err.println("Error with user input: " + e.getMessage());
+      }
    }
 
    public static void viewStores(PizzaStore esql) {
@@ -677,12 +711,13 @@ public class PizzaStore {
       Connection conn = esql._connection;
       PreparedStatement stmt;
       ResultSet rs;
+      String query;
 
       try {
          System.out.print("\nEnter the order number of the order you want to edit: ");
          String order_num = in.readLine();
 
-         String query = String.format("SELECT COUNT(*) FROM FoodOrder WHERE orderID = %s", order_num);
+         query = String.format("SELECT COUNT(*) FROM FoodOrder WHERE orderID = %s", order_num);
          stmt = conn.prepareStatement(query);
          rs = stmt.executeQuery();
 
@@ -712,8 +747,11 @@ public class PizzaStore {
    }
 
    public static void updateMenu(PizzaStore esql) {
-      Connection conn = esql._connection;
       int user_choice = 0;
+      Connection conn = esql._connection;
+      PreparedStatement stmt;
+      ResultSet rs;
+      String query;
 
       try {
          do {
@@ -735,9 +773,9 @@ public class PizzaStore {
             System.out.print("\nEnter the item name of the item you want to edit: ");
             String item_name = in.readLine();
 
-            String query = String.format("SELECT COUNT(*) FROM Items WHERE itemName = '%s'", item_name);
-            PreparedStatement stmt = conn.prepareStatement(query);
-            ResultSet rs = stmt.executeQuery();
+            query = String.format("SELECT COUNT(*) FROM Items WHERE itemName = '%s'", item_name);
+            stmt = conn.prepareStatement(query);
+            rs = stmt.executeQuery();
 
             if (rs.next() && !rs.getBoolean(1)) {
                System.out.println("Selected item does not exist.\n");
@@ -796,9 +834,9 @@ public class PizzaStore {
             System.out.print("\nEnter the item name of the item you want to add: ");
             String item_name = in.readLine();
 
-            String query = String.format("SELECT COUNT(*) FROM Items WHERE itemName = '%s'", item_name);
-            PreparedStatement stmt = conn.prepareStatement(query);
-            ResultSet rs = stmt.executeQuery();
+            query = String.format("SELECT COUNT(*) FROM Items WHERE itemName = '%s'", item_name);
+            stmt = conn.prepareStatement(query);
+            rs = stmt.executeQuery();
 
             if (rs.next() && rs.getBoolean(1)) {
                System.out.println("Selected item already exists.\n");
@@ -846,17 +884,20 @@ public class PizzaStore {
    }
 
    public static void updateUser(PizzaStore esql) {
-      Connection conn = esql._connection;
       int user_choice = 0;
+      Connection conn = esql._connection;
+      PreparedStatement stmt;
+      ResultSet rs;
+      String query;
 
       try {
          // get login and make sure it exists
          System.out.print("\nEnter the login of the user you want to edit: ");
          String login = in.readLine();
 
-         String query = String.format("SELECT COUNT(*) FROM Users WHERE login = '%s'", login);
-         PreparedStatement stmt = conn.prepareStatement(query);
-         ResultSet rs = stmt.executeQuery();
+         query = String.format("SELECT COUNT(*) FROM Users WHERE login = '%s'", login);
+         stmt = conn.prepareStatement(query);
+         rs = stmt.executeQuery();
 
          if (rs.next() && !rs.getBoolean(1)) {
             System.out.println("Selected user does not exist.\n");
