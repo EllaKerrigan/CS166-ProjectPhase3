@@ -457,13 +457,13 @@ public class PizzaStore {
 
          // Check if the user exists
          if (rs.next()) {
-            String role = rs.getString("role");
+            String role = rs.getString("role").trim();
 
-            if (role == "customer") {
+            if (role.equals("customer")) {
                user_type = UserType.CUSTOMER;
-            } else if (role == "driver") {
+            } else if (role.equals("driver")) {
                user_type = UserType.DRIVER;
-            } else if (role == "manager") {
+            } else if (role.equals("manager")) {
                user_type = UserType.MANAGER;
             }
 
@@ -680,6 +680,81 @@ public class PizzaStore {
    }
 
    public static void updateUser(PizzaStore esql) {
+      Connection conn = esql._connection;
+      int user_choice = 0;
+
+      try {
+         System.out.print("\nEnter the login of the user you want to edit: ");
+         String login = in.readLine();
+
+         String query = String.format("SELECT COUNT(*) FROM Users WHERE login = '%s'", login);
+         PreparedStatement stmt = conn.prepareStatement(query);
+         ResultSet rs = stmt.executeQuery();
+
+         if (rs.next() && !rs.getBoolean(1)) {
+            System.out.println("Selected user does not exist.\n");
+            return;
+         }
+
+         do {
+            System.out.println("1. Update Login");
+            System.out.println("2. Update Role");
+            System.out.println("3. Go Back");
+            System.out.print("Please make your choice: ");
+
+            String inputStr = in.readLine();
+            if (!inputStr.isEmpty()) {
+               user_choice = Integer.parseInt(inputStr);
+            }
+            if (user_choice < 1 || user_choice > 3) {
+               System.out.println("\nPlease select a valid option.");
+            }
+         } while (user_choice < 1 || user_choice > 3);
+
+         if (user_choice == 1 || user_choice == 2) {
+            String prompt = (user_choice == 1) ? "Enter new login for the user: " : "Enter new role for the user: ";
+            System.out.print(prompt);
+            String inputStr = in.readLine();
+
+            if (user_choice == 2 && !inputStr.equals("customer") && !inputStr.equals("driver")
+                  && !inputStr.equals("manager")) {
+               System.out.println("Selected role is not valid");
+               return;
+            } else if (user_choice == 1) {
+               query = String.format("SELECT COUNT(*) FROM Users WHERE login = '%s'", inputStr);
+               stmt = conn.prepareStatement(query);
+               rs = stmt.executeQuery();
+
+               if (rs.next() && rs.getBoolean(1)) {
+                  System.out.println("Selected login is already taken.\n");
+                  return;
+               }
+            }
+
+            // update user type ennum if role is changed
+            if (user_choice == 2 && inputStr.equals("customer")) {
+               user_type = UserType.CUSTOMER;
+            } else if (user_choice == 2 && inputStr.equals("driver")) {
+               user_type = UserType.DRIVER;
+            } else if (user_choice == 2 && inputStr.equals("manager")) {
+               user_type = UserType.MANAGER;
+            }
+
+            String attribute = (user_choice == 1) ? "login" : "role";
+            query = String.format("UPDATE Users SET %s = '%s' WHERE login = '%s'", attribute, inputStr, login);
+            stmt = conn.prepareStatement(query);
+            stmt.executeUpdate();
+            System.out.println("Data updated successfully!\n");
+
+         } else if (user_choice == 3) {
+            return;
+         }
+
+      } catch (SQLException e) {
+         System.err.println("Database error while retrieving user info: " + e.getMessage());
+      } catch (IOException e) {
+         System.err.println("Error with user input: " + e.getMessage());
+      }
    }
 
 }// end PizzaStore
