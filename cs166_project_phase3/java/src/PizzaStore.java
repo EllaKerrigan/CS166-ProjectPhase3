@@ -674,6 +674,41 @@ public class PizzaStore {
    }
 
    public static void updateOrderStatus(PizzaStore esql) {
+      Connection conn = esql._connection;
+      PreparedStatement stmt;
+      ResultSet rs;
+
+      try {
+         System.out.print("\nEnter the order number of the order you want to edit: ");
+         String order_num = in.readLine();
+
+         String query = String.format("SELECT COUNT(*) FROM FoodOrder WHERE orderID = %s", order_num);
+         stmt = conn.prepareStatement(query);
+         rs = stmt.executeQuery();
+
+         if (rs.next() && !rs.getBoolean(1)) {
+            System.out.println("Selected order does not exists.\n");
+            return;
+         }
+
+         System.out.print("Enter the new order status: ");
+         String order_status = in.readLine();
+
+         if (!order_status.equals("complete") && !order_status.equals("incomplete")) {
+            System.out.println("Entered order status is not valid");
+            return;
+         }
+
+         query = String.format("UPDATE FoodOrder SET orderStatus = '%s' WHERE orderID = '%s'", order_status, order_num);
+         stmt = conn.prepareStatement(query);
+         stmt.executeUpdate();
+         System.out.println("Data updated successfully!\n");
+
+      } catch (SQLException e) {
+         System.err.println("Database error while retrieving order info: " + e.getMessage());
+      } catch (IOException e) {
+         System.err.println("Error with user input: " + e.getMessage());
+      }
    }
 
    public static void updateMenu(PizzaStore esql) {
