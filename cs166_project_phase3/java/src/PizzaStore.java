@@ -677,6 +677,137 @@ public class PizzaStore {
    }
 
    public static void updateMenu(PizzaStore esql) {
+      Connection conn = esql._connection;
+      int user_choice = 0;
+
+      try {
+         do {
+            System.out.println("\n1. Update Existing Item");
+            System.out.println("2. Add New Item");
+            System.out.println("3. Go Back");
+            System.out.print("Please make your choice: ");
+
+            String inputStr = in.readLine();
+            if (!inputStr.isEmpty()) {
+               user_choice = Integer.parseInt(inputStr);
+            }
+            if (user_choice < 1 || user_choice > 3) {
+               System.out.println("\nPlease select a valid option.");
+            }
+         } while (user_choice < 1 || user_choice > 3);
+
+         if (user_choice == 1) {
+            System.out.print("\nEnter the item name of the item you want to edit: ");
+            String item_name = in.readLine();
+
+            String query = String.format("SELECT COUNT(*) FROM Items WHERE itemName = '%s'", item_name);
+            PreparedStatement stmt = conn.prepareStatement(query);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next() && !rs.getBoolean(1)) {
+               System.out.println("Selected item does not exist.\n");
+               return;
+            }
+
+            System.out.print("Enter new item name (leave empty to skip): ");
+            String new_item_name = in.readLine();
+
+            System.out.print("Enter new ingredient(s) (leave empty to skip): ");
+            String new_ingredients = in.readLine();
+
+            System.out.print("Enter new item type (leave empty to skip) : ");
+            String new_item_type = in.readLine();
+
+            System.out.print("Enter new price (leave empty to skip): ");
+            String new_price_str = in.readLine();
+            Double new_price = null;
+            if (!new_price_str.isEmpty()) {
+               new_price = Double.parseDouble(new_price_str);
+            }
+
+            System.out.print("Enter new description (leave empty ro skip): ");
+            String new_description = in.readLine();
+
+            query = "UPDATE Items SET ";
+
+            if (!new_item_name.isEmpty()) {
+               query += "itemName = '" + new_item_name + "'";
+            } else {
+               query += "itemName = '" + item_name + "'";
+            }
+
+            if (!new_ingredients.isEmpty()) {
+               query += ", ingredients = '" + new_ingredients + "'";
+            }
+
+            if (!new_item_type.isEmpty()) {
+               query += ", typeOfItem = '" + new_item_type + "'";
+            }
+
+            if (new_price != null) {
+               query += ", price = '" + new_price + "'";
+            }
+
+            if (!new_description.isEmpty()) {
+               query += ", description = '" + new_description + "'";
+            }
+
+            query += String.format(" WHERE itemName = '%s'", item_name);
+            conn = esql._connection;
+            stmt = conn.prepareStatement(query);
+            stmt.executeQuery();
+
+         } else if (user_choice == 2) {
+            System.out.print("\nEnter the item name of the item you want to add: ");
+            String item_name = in.readLine();
+
+            String query = String.format("SELECT COUNT(*) FROM Items WHERE itemName = '%s'", item_name);
+            PreparedStatement stmt = conn.prepareStatement(query);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next() && rs.getBoolean(1)) {
+               System.out.println("Selected item already exists.\n");
+               return;
+            }
+
+            System.out.print("Enter ingredient(s): ");
+            String new_ingredients = in.readLine();
+
+            System.out.print("Enter item type: ");
+            String new_item_type = in.readLine();
+
+            System.out.print("Enter price: ");
+            String new_price_str = in.readLine();
+            Double new_price = null;
+            if (!new_price_str.isEmpty()) {
+               new_price = Double.parseDouble(new_price_str);
+            }
+
+            System.out.print("Enter new description: ");
+            String new_description = in.readLine();
+
+            if (item_name.isEmpty() || new_ingredients.isEmpty() || new_item_type.isEmpty() || new_price == null
+                  || new_description.isEmpty()) {
+               System.out.println("Empty values are not allowed");
+               return;
+            }
+
+            query = String.format(
+                  "INSERT INTO Items (itemName, ingredients, typeOfItem, price, description) VALUES ('%s', '%s', '%s', %.2f, '%s');",
+                  item_name, new_ingredients, new_item_type, new_price, new_description);
+
+            esql.executeUpdate(query);
+            System.out.println("Item successfully created!");
+
+         } else if (user_choice == 3) {
+            return;
+         }
+
+      } catch (SQLException e) {
+         System.err.println("Database error while retrieving item info: " + e.getMessage());
+      } catch (IOException e) {
+         System.err.println("Error with user input: " + e.getMessage());
+      }
    }
 
    public static void updateUser(PizzaStore esql) {
@@ -684,6 +815,7 @@ public class PizzaStore {
       int user_choice = 0;
 
       try {
+         // get login and make sure it exists
          System.out.print("\nEnter the login of the user you want to edit: ");
          String login = in.readLine();
 
@@ -716,6 +848,7 @@ public class PizzaStore {
             System.out.print(prompt);
             String inputStr = in.readLine();
 
+            // input validation
             if (user_choice == 2 && !inputStr.equals("customer") && !inputStr.equals("driver")
                   && !inputStr.equals("manager")) {
                System.out.println("Selected role is not valid");
