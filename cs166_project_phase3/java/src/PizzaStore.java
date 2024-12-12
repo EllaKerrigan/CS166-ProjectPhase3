@@ -806,8 +806,12 @@ public class PizzaStore {
          System.out.print("\nEnter the order number of the order you want to view: ");
          String order_num = in.readLine();
 
-         query = String.format("SELECT COUNT(*) FROM FoodOrder WHERE orderID = %s AND login ='%s'", order_num,
-               username);
+         if (user_type == UserType.CUSTOMER) {
+            query = String.format("SELECT COUNT(*) FROM FoodOrder WHERE orderID = %s AND login ='%s'", order_num,
+                  username);
+         } else {
+            query = String.format("SELECT COUNT(*) FROM FoodOrder WHERE orderID = %s", order_num);
+         }
          stmt = conn.prepareStatement(query);
          rs = stmt.executeQuery();
 
