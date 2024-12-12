@@ -415,7 +415,7 @@ public class PizzaStore {
          System.out.print("Enter password: ");
          String password = in.readLine();
 
-         System.out.print("Enter role (e.g., Customer, Manager, Driver): ");
+         System.out.print("Enter role (Customer, Manager or Driver): ");
          String role = in.readLine();
 
          System.out.print("Enter phone number: ");
@@ -449,7 +449,7 @@ public class PizzaStore {
 
          String query = "SELECT * FROM Users WHERE login = ? AND password = ?";
 
-         Connection conn = esql._connection; // Assuming esql.getConnection() returns a valid Connection object
+         Connection conn = esql._connection; 
 
          PreparedStatement stmt = conn.prepareStatement(query);
          stmt.setString(1, login); // Set the login parameter
@@ -457,10 +457,9 @@ public class PizzaStore {
 
          ResultSet rs = stmt.executeQuery();
 
-         // Check if the user exists
          if (rs.next()) {
             String role = rs.getString("role").trim();
-
+            //Check user types 
             if (role.equals("customer")) {
                user_type = UserType.CUSTOMER;
             } else if (role.equals("driver")) {
@@ -470,7 +469,7 @@ public class PizzaStore {
             }
 
             System.out.println("Login successful!\n");
-            return login; // Return the username (login) if successful
+            return login; 
          } else {
             System.out.println("Invalid username or password.\n");
             return null;
@@ -593,9 +592,9 @@ public class PizzaStore {
          String sortChoice = in.readLine();
          String sortOrder = "";
          if (sortChoice.equals("1")) {
-            sortOrder = "ASC"; // Sort from low to high
+            sortOrder = "ASC"; // Sort from low --> high
          } else if (sortChoice.equals("2")) {
-            sortOrder = "DESC"; // Sort from high to low
+            sortOrder = "DESC"; // Sort from high --> low
          }
 
          String query = "SELECT * FROM items";
@@ -665,7 +664,7 @@ public class PizzaStore {
          double totalPrice = 0.0;
 
          while (true) {
-            System.out.print("Enter item name (or 'done' to finish, or leave blank to cancel): ");
+            System.out.print("Enter item name (or 'done' to finish: ");
             String itemName = in.readLine();
             if (itemName.equalsIgnoreCase("done")) {
                break;
@@ -690,14 +689,12 @@ public class PizzaStore {
             }
          }
 
-         // getting the next available order ID
          String orderID_query = "SELECT MAX(orderID) FROM FoodOrder;";
          stmt = conn.prepareStatement(orderID_query);
          rs = stmt.executeQuery();
          rs.next();
          int new_orderID = rs.getInt("max") + 1;
 
-         // get timestamp for query
          LocalDateTime local_timestamp = LocalDateTime.now();
          Timestamp timestamp = Timestamp.valueOf(local_timestamp);
 
