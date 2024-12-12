@@ -601,7 +601,7 @@ public class PizzaStore {
          String conditions = "";
 
          if (!typeOfItem.isEmpty()) {
-            conditions += " typeOfItem = '" + typeOfItem + "'";
+            conditions += " TRIM(typeOfItem) = '" + typeOfItem + "'";
          }
 
          if (price != null) {
