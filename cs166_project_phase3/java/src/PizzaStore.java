@@ -328,10 +328,10 @@ public class PizzaStore {
                         placeOrder(esql, authorisedUser);
                         break;
                      case 5:
-                        viewAllOrders(esql);
+                        viewAllOrders(esql, authorisedUser);
                         break;
                      case 6:
-                        viewRecentOrders(esql);
+                        viewRecentOrders(esql, authorisedUser);
                         break;
                      case 7:
                         viewOrderInfo(esql, authorisedUser);
@@ -729,10 +729,71 @@ public class PizzaStore {
       }
    }
 
-   public static void viewAllOrders(PizzaStore esql) {
+   public static void viewAllOrders(PizzaStore esql, String username) {
+      Connection conn = esql._connection;
+      PreparedStatement stmt;
+      ResultSet rs;
+      String query;
+      String selected_username = username;
+
+      try {
+         if (user_type != UserType.CUSTOMER) {
+            System.out.print("\nEnter the login of the user whose orders you want to view: ");
+            selected_username = in.readLine();
+
+            query = String.format("SELECT COUNT(*) FROM Users WHERE login = '%s'", selected_username);
+            stmt = conn.prepareStatement(query);
+            rs = stmt.executeQuery();
+
+            if (rs.next() && !rs.getBoolean(1)) {
+               System.out.println("Selected order does not exists.\n");
+               return;
+            }
+         }
+
+         query = "SELECT orderID FROM FoodOrder WHERE login = ?";
+         stmt = conn.prepareStatement(query);
+         stmt.setString(1, selected_username);
+
+         rs = stmt.executeQuery();
+
+         System.out.println("\nAll Orders:");
+         while (rs.next()) {
+            int orderID = rs.getInt("orderID");
+            System.out.println("Order ID: " + orderID);
+         }
+         System.out.println();
+
+      } catch (IOException e) {
+         System.err.println("Error with user input: " + e.getMessage());
+      } catch (SQLException e) {
+         System.err.println("Database error while retieving user info: " + e.getMessage());
+      }
+
    }
 
-   public static void viewRecentOrders(PizzaStore esql) {
+   public static void viewRecentOrders(PizzaStore esql, String username) {
+      Connection conn = esql._connection;
+      PreparedStatement stmt;
+      ResultSet rs;
+      String query;
+
+      try {
+         query = "SELECT orderID FROM FoodOrder WHERE login = ? ORDER BY orderTimestamp DESC LIMIT 5";
+         stmt = conn.prepareStatement(query);
+         stmt.setString(1, username);
+
+         rs = stmt.executeQuery();
+
+         System.out.println("\nRecent Orders:");
+         while (rs.next()) {
+            int orderID = rs.getInt("orderID");
+            System.out.println("Order ID: " + orderID);
+         }
+
+      } catch (SQLException e) {
+         System.err.println("Database error while retrieving order history: " + e.getMessage());
+      }
    }
 
    public static void viewOrderInfo(PizzaStore esql, String username) {
