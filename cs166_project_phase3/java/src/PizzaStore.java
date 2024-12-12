@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.sql.PreparedStatement;
 import java.lang.Math;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 /**
  * This class defines a simple embedded SQL utility class that is designed to
@@ -323,7 +325,7 @@ public class PizzaStore {
                         viewMenu(esql);
                         break;
                      case 4:
-                        placeOrder(esql);
+                        placeOrder(esql, authorisedUser);
                         break;
                      case 5:
                         viewAllOrders(esql);
@@ -636,7 +638,95 @@ public class PizzaStore {
       }
    }
 
-   public static void placeOrder(PizzaStore esql) {
+   public static void placeOrder(PizzaStore esql, String username) {
+      Connection conn = esql._connection;
+      PreparedStatement stmt;
+      ResultSet rs;
+      String query;
+      BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+      try {
+         System.out.print("Enter the store ID where you want to order from: ");
+         String storeIdStr = reader.readLine();
+         int storeID = Integer.parseInt(storeIdStr);
+
+         query = "SELECT COUNT(*) FROM Store WHERE storeID = ?";
+         stmt = conn.prepareStatement(query);
+         stmt.setInt(1, storeID);
+         rs = stmt.executeQuery();
+
+         if (rs.next() && rs.getInt(1) == 0) {
+            System.out.println("Invalid store ID. Please try again.\n");
+            return;
+         }
+
+         List<String> items = new ArrayList<>();
+         List<Integer> quantities = new ArrayList<>();
+         double totalPrice = 0.0;
+
+         while (true) {
+            System.out.print("Enter item name (or 'done' to finish, or leave blank to cancel): ");
+            String itemName = in.readLine();
+            if (itemName.equalsIgnoreCase("done")) {
+               break;
+            } else if (itemName.isEmpty()) {
+               return;
+            }
+            System.out.print("Enter quantity: ");
+            int quantity = Integer.parseInt(in.readLine());
+
+            query = "SELECT price FROM Items WHERE itemName = ?";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, itemName);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+               double price = rs.getDouble(1);
+               totalPrice += price * quantity;
+               items.add(itemName);
+               quantities.add(quantity);
+            } else {
+               System.out.println("Item not found in the menu. Please try again.\n");
+            }
+         }
+
+         // getting the next available order ID
+         String orderID_query = "SELECT MAX(orderID) FROM FoodOrder;";
+         stmt = conn.prepareStatement(orderID_query);
+         rs = stmt.executeQuery();
+         rs.next();
+         int new_orderID = rs.getInt("max") + 1;
+
+         // get timestamp for query
+         LocalDateTime local_timestamp = LocalDateTime.now();
+         Timestamp timestamp = Timestamp.valueOf(local_timestamp);
+
+         query = "INSERT INTO FoodOrder (orderID, login, storeID, totalPrice, orderTimestamp, orderStatus) VALUES (?, ?, ?, ?, ?, 'incomplete')";
+         stmt = conn.prepareStatement(query);
+         stmt.setInt(1, new_orderID);
+         stmt.setString(2, username);
+         stmt.setInt(3, storeID);
+         stmt.setDouble(4, totalPrice);
+         stmt.setTimestamp(5, timestamp);
+         stmt.executeUpdate();
+
+         for (int i = 0; i < items.size(); i++) {
+            query = "INSERT INTO ItemsInOrder (orderID, itemName, quantity) VALUES (?, ?, ?)";
+            stmt = conn.prepareStatement(query);
+            stmt.setInt(1, new_orderID);
+            stmt.setString(2, items.get(i));
+            stmt.setInt(3, quantities.get(i));
+            stmt.executeUpdate();
+         }
+
+         System.out.println("Order placed successfully! Your order ID is: " + new_orderID);
+         System.out.println("Total price: $" + totalPrice);
+
+      } catch (SQLException e) {
+         System.err.println("Database error while placing order: " + e.getMessage());
+      } catch (IOException e) {
+         System.err.println("Error with user input: " + e.getMessage());
+      }
    }
 
    public static void viewAllOrders(PizzaStore esql) {
